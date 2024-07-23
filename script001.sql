@@ -1,76 +1,76 @@
-# INSTALL HIVE
+-- INSTALL HIVE
 
-# PULL IMAGE
+-- PULL IMAGE
 docker pull apache/hive:3.1.3
 
-# CREATE THE CONTAINER
+-- CREATE THE CONTAINER
 docker run -d -p 10000:10000 -p 10002:10002 --env SERVICE_NAME=hiveserver2 --name hive4 apache/hive:3.1.3
 
-# ACCESS TO THE CONTAINER
+-- ACCESS TO THE CONTAINER
 docker exec -it hive4 bash
 
 docker exec -it [name of container] bash
 
-# ACCCESS TO THE HIVE DATABASE
+-- ACCCESS TO THE HIVE DATABASE
 /opt/hive/bin/beeline -u jdbc:hive2://localhost:10000
 
-# SHOW ALL DATABASE
+-- SHOW ALL DATABASE
 show databases;
 
-# USE DEFAULT DATABASE
+-- USE DEFAULT DATABASE
 use default;
 
-#CREATE DATABASE IF NO EXISTS 
+-- CREATE DATABASE IF NO EXISTS 
 create database if not exists testdb;
 use testdb;
 
 
-# CREATE TABLE
+-- CREATE TABLE
 create table fruits (name string, price int);
 
-# SHOW ALL TABLES
+-- SHOW ALL TABLES
 show tables;
 
-# SHOW STRUCTURE 
+-- SHOW STRUCTURE 
 describe fruits;
 
-# INSERT DATA:
+-- INSERT DATA:
 insert into fruits values ('banana', '1.00');
 insert into fruits values ('apples', '2.00');
 
-# SELECT DATA
+-- SELECT DATA
 select * from fruits ;
 
-# TRUNCATE TABLE
+-- TRUNCATE TABLE
 truncate table fruits
 
-# SELECT DATA
+-- SELECT DATA
 select * from fruits ;
 
-# DELTE DATA 
+-- DELTE DATA 
 delete from fruits where name = 'banana';
 
- # CREATE TABLES CUSTOMERS:
+-- CREATE TABLES CUSTOMERS:
 create table customers ( index int , customerid string , first_name string, last_name
 string, company string, city string, country string, phone string, email string,
 Subscription_Date date, Website string ) ROW FORMAT DELIMITED FIELDS TERMINATED
 BY ',';
 
-# LOAD THE DATA FROM FILE:
+-- LOAD THE DATA FROM FILE:
 LOAD DATA LOCAL INPATH '/opt/hive/examples/files/files/customers.csv' OVERWRITE INTO TABLE customers;
 
-#  ENABLED ACID TRANSACTION TABLE
+--  ENABLED ACID TRANSACTION TABLE
 SET hive.support.concurrency=true;
 SET hive.txn.manager=org.apache.hadoop.hive.ql.lockmgr.DbTxnManager;
-# The follwoing are not required if you are using Hive 2.0
+-- The follwoing are not required if you are using Hive 2.0
 SET hive.enforce.bucketing=true;
 SET hive.exec.dynamic.partition.mode=nostrict;
-# The following parameters are required for standalone hive metastore
+-- The following parameters are required for standalone hive metastore
 SET hive.compactor.initiator.on=true;
 SET hive.compactor.worker.threads=1;
 
 
-# DISABLE TRANSACTION
+-- DISABLE TRANSACTION
 SET hive.support.concurrency=false;
 SET hive.txn.manager=org.apache.hadoop.hive.ql.lockmgr.DummyTxnManager;
 SET hive.enforce.bucketing=false;
@@ -78,7 +78,7 @@ SET hive.exec.dynamic.partition.mode=strict;
 SET hive.compactor.initiator.on=false;
 SET hive.compactor.worker.threads=0;
 
-# CREATE TABLE TRANSACTION
+-- CREATE TABLE TRANSACTION
 CREATE TABLE my_transactional_table (
 id INT,
 name STRING
@@ -109,10 +109,10 @@ UPDATE employee_trans
 SET age=45
 WHERE id=3;
 
-# Other Hive ACID Transactional Commands
+-- Other Hive ACID Transactional Commands
 SHOW TRANSACTIONS;
 
-# SHOW locks
+-- SHOW locks
 SHOW LOCKS
 
 SHOW LOCKS;
@@ -120,7 +120,7 @@ SHOW LOCKS <database_name>;
 SHOW LOCKS <table_name>;
 SHOW LOCKS <table_name> PARTITION (<partition_spec>);
 
-# Using Joins in Hive
+-- Using Joins in Hive
 CREATE TABLE customer (
 customer_id INT,
 customer_name STRING
@@ -142,7 +142,7 @@ INSERT INTO orders VALUES(2, 102, 'Phone');
 INSERT INTO orders VALUES(3, 103, 'Tablet'),(4, 104, 'Camera');
 INSERT INTO orders VALUES (5, 104, 'Phone');
 
-# SELECT Joins
+-- SELECT Joins
 SELECT orders.order_id, customer.customer_name, orders.product
 FROM orders 
 JOIN customer ON orders.customer_id = customer.customer_id;
@@ -206,14 +206,45 @@ when gender='M' then 2
 else '-1' END
 from employee where gender = 'M';
 
-# Run latest
+-- Run latest
 export HIVE_VERSION=4.0.0
 docker run -d -p 10000:10000 -p 10002:10002 --env SERVICE_NAME=hiveserver2 --name hive4 apache/hive:${HIVE_VERSION}
 
-# Enter to the docker hive
+-- Enter to the docker hive
 docker exec -it hive4 beeline -u 'jdbc:hive2://localhost:10000/'
 
 
-# Accessing HiveServer2 Web UI:
+-- Accessing HiveServer2 Web UI:
 
 Accessed on browser at http://localhost:10002/
+
+-- Partition table 
+CREATE TABLE zipcodes(
+RecordNumber int,
+Country string,
+City string,
+Zipcode int
+)
+PARTITIONED BY(state string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ',';
+
+-- Load Data:
+-- LOAD DATA LOCAL INPATH '/opt/files/zipcodes20.csv' OVERWRITE INTO TABLE zipcodes;
+LOAD DATA LOCAL INPATH '/opt/hive/examples/files/files/zipcodes20.csv' OVERWRITE INTO TABLE zipcodes;
+-- Show Partitions:
+SHOW PARTITIONS zipcodes;
+-- Add New Partition to the Hive Table:
+ALTER TABLE zipcodes ADD PARTITION (state='CA');
+-- Show new added partition:
+SHOW PARTITIONS zipcodes;
+-- Rename or Update Hive Partition
+ALTER TABLE zipcodes PARTITION (state='AL') RENAME TO PARTITION (state='NY');
+-- Drop Hive Partition
+ALTER TABLE zipcodes DROP IF EXISTS PARTITION (state='AL');
+-- Know Specific Partition Location on HDFS
+DESCRIBE FORMATTED zipcodes PARTITION(state='PR');
+SHOW TABLE EXTENDED LIKE zipcodes PARTITION(state='PR');
+
+
+
